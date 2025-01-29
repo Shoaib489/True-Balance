@@ -1,11 +1,26 @@
-import React, { useState } from 'react';
-import classes from "./practicebalance.module.css"; // Assuming you have the styles already
+import React, { useState, useEffect } from 'react';
+import classes from './practicebalance.module.css';
+import Summary from '../summary';
+import Distribute from '../paymentDistribute';
 
 const Practice = () => {
     const [friends, setFriends] = useState([]);
-    const [currentFriend, setCurrentFriend] = useState({ name: '', expense: '' });
+    const [currentFriend, setCurrentFriend] = useState({ name: '', expense: '', type: '' });
     const [selectedFriendIndex, setSelectedFriendIndex] = useState(null);
-    const [additionalExpense, setAdditionalExpense] = useState('');
+    const [additionalExpense, setAdditionalExpense] = useState({ amount: '', type: '' });
+
+    // Retrieve data from localStorage after the component mounts
+    useEffect(() => {
+        const savedFriends = localStorage.getItem('friends');
+        if (savedFriends) {
+            setFriends(JSON.parse(savedFriends));
+        }
+    }, []);
+
+    // Save to localStorage whenever friends array changes
+    useEffect(() => {
+        localStorage.setItem('friends', JSON.stringify(friends));
+    }, [friends]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -13,29 +28,51 @@ const Practice = () => {
     };
 
     const handleAddFriend = () => {
-        if (currentFriend.name && currentFriend.expense) {
-            setFriends([...friends, { name: currentFriend.name, expenses: [parseFloat(currentFriend.expense)] }]);
-            setCurrentFriend({ name: '', expense: '' });
+        if (currentFriend.name && currentFriend.expense && currentFriend.type) {
+            setFriends([
+                ...friends,
+                {
+                    name: currentFriend.name,
+                    expenses: [{ amount: parseFloat(currentFriend.expense), type: currentFriend.type }]
+                }
+            ]);
+            setCurrentFriend({ name: '', expense: '', type: '' });
         } else {
-            alert('Please fill in both fields');
+            alert('Please fill in all the fields');
         }
     };
 
     const handleAddExpense = (index) => {
-        if (additionalExpense) {
+        if (additionalExpense.amount && additionalExpense.type) {
             const updatedFriends = [...friends];
-            updatedFriends[index].expenses.push(parseFloat(additionalExpense));
+            updatedFriends[index].expenses.push({
+                amount: parseFloat(additionalExpense.amount),
+                type: additionalExpense.type
+            });
             setFriends(updatedFriends);
-            setAdditionalExpense('');
+            setAdditionalExpense({ amount: '', type: '' });
             setSelectedFriendIndex(null);
         } else {
-            alert('Please enter an expense');
+            alert('Please enter both expense and type');
         }
     };
 
+    const handleToggleExpenseInput = (index) => {
+        if (selectedFriendIndex === index) {
+            setSelectedFriendIndex(null);  // Close if it's already open
+        } else {
+            setSelectedFriendIndex(index);  // Open if closed
+        }
+    };
+
+    const handleClearAll = () => {
+        setFriends([]);
+        localStorage.removeItem('friends');  // Clear from local storage too
+    };
+
     const calculateTotalAmount = () => {
-        return friends.reduce((total, friend) =>
-            total + friend.expenses.reduce((sum, expense) => sum + expense, 0),
+        return friends.reduce(
+            (total, friend) => total + friend.expenses.reduce((sum, expense) => sum + expense.amount, 0),
             0
         );
     };
@@ -46,7 +83,7 @@ const Practice = () => {
     };
 
     const calculateFriendTotalExpense = (expenses) => {
-        return expenses.reduce((sum, expense) => sum + expense, 0);
+        return expenses.reduce((sum, expense) => sum + expense.amount, 0);
     };
 
     const giveTakeAmount = (friend) => {
@@ -56,7 +93,6 @@ const Practice = () => {
     };
 
     const calculateDistribution = () => {
-        const totalAmount = calculateTotalAmount();
         const averageAmount = calculateAverageAmount();
         const contributions = friends.map(friend => {
             const totalExpense = calculateFriendTotalExpense(friend.expenses);
@@ -74,7 +110,7 @@ const Practice = () => {
                 const receiverDeficit = receiver.shouldPay - receiver.paid;
                 if (payerExcess > 0 && receiverDeficit > 0) {
                     const transferAmount = Math.min(payerExcess, receiverDeficit);
-                    distribution.push(`${receiver.name} pays ${payer.name} $${transferAmount.toFixed(2)}`);
+                    distribution.push(`${receiver.name} needs to pay ${payer.name} ₹${transferAmount.toFixed(2)}`);
                     payer.paid -= transferAmount;
                     receiver.paid += transferAmount;
                 }
@@ -85,106 +121,135 @@ const Practice = () => {
     };
 
     return (
-        <div className={` ${classes.respoPadding} p-6 bg-gray-50 min-h-screen`}>
-            <div className='max-w-2xl'>
+        <div className={`${classes.respoPadding} p-6 bg-gray-50 min-h-screen`}>
+            <div className=''>
                 <p className={classes.heading}>True Balance</p>
-                <div className='bg-white shadow-md rounded-lg p-6 mb-6 flex justify-between flex-wrap'>
-                    <div className={`${classes.inputMain} flex gap-4 flex-wrap`}>
-                        <div className='flex flex-col'>
-                            <label className='font-semibold mb-1'>Name:</label>
-                            <input
-                                type="text"
-                                name="name"
-                                className='border border-gray-300 rounded p-1'
-                                value={currentFriend.name}
-                                onChange={handleInputChange}
-                            />
-                        </div>
-                        <div className='flex flex-col'>
-                            <label className='font-semibold mb-1'>Expense:</label>
-                            <input
-                                type="number"
-                                name="expense"
-                                className='border border-gray-300 rounded p-1'
-                                value={currentFriend.expense}
-                                onChange={handleInputChange}
-                            />
-                        </div>
 
+                <div className='flex justify-between wrap gap-4'>
+                    <div className='bg-white shadow-md rounded-lg p-6 mb-6 w-[65%]'>
+                        <div className={`${classes.inputMain} flex gap-4 flex-wrap`}>
+                            <div className='flex flex-col'>
+                                <label className='font-semibold mb-1'>Name:</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    className='border border-gray-300 rounded p-1 '
+                                    value={currentFriend.name}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            <div className='flex flex-col'>
+                                <label className='font-semibold mb-1'>Expense:</label>
+                                <input
+                                    type="number"
+                                    name="expense"
+                                    className='border border-gray-300 rounded p-1'
+                                    value={currentFriend.expense}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                            <div className='flex flex-col'>
+                                <label className='font-semibold mb-1'>For:</label>
+                                <input
+                                    type="text"
+                                    name="type"
+                                    className='border border-gray-300 rounded p-1'
+                                    value={currentFriend.type}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        </div>
+                        <button onClick={handleAddFriend} className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'>Add Friend</button>
                     </div>
-                    <button onClick={handleAddFriend} className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'>Add Friend</button>
+
+                    {/* summary area */}
+
+                    <Summary
+                        totalAmount={calculateTotalAmount()}
+                        averageAmount={calculateAverageAmount()}
+                        handleClearAll={handleClearAll}
+                    />
+                    
+                    {/* summary area */}
                 </div>
-                <div>
-                    <div className='bg-white shadow-md rounded-lg p-6 mb-6'>
-                        <h3 className='text-xl font-bold mb-4'>Friends List</h3>
-                        <table className='w-full border-collapse'>
-                            <thead>
-                                <tr className='bg-gray-200'>
-                                    <th className='border p-2 text-left'>Name</th>
-                                    <th className='border p-2 text-left'>Expenses</th>
-                                    <th className='border p-2 text-left'><span className='text-[red]'>Give</span> / <span className='text-[green]'>Take</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {friends.map((friend, index) => (
-                                    <tr key={index} className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                                        <td className='border p-2 capitalize'>{friend.name}</td>
-                                        <td className='border p-2'>
-                                            <ul>
-                                                {friend.expenses.map((expense, i) => (
-                                                    <li key={i}>${expense.toFixed(2)}</li>
-                                                ))}
-                                                {selectedFriendIndex === index && (
-                                                    <li className='flex items-center mt-2'>
-                                                        <input
-                                                            type="number"
-                                                            className='border border-gray-300 rounded p-1 mr-2'
-                                                            value={additionalExpense}
-                                                            onChange={(e) => setAdditionalExpense(e.target.value)}
-                                                        />
-                                                        <button onClick={() => handleAddExpense(index)} className='px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600'>Save</button>
-                                                    </li>
-                                                )}
-                                            </ul>
-                                            <div className='mt-2 font-semibold'>
-                                                 Spent: ${calculateFriendTotalExpense(friend.expenses).toFixed(2)}
-                                            </div>
-                                            {selectedFriendIndex !== index && (
-                                                <button onClick={() => setSelectedFriendIndex(index)} className='mt-2 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600'>Add Expense</button>
-                                            )}
-                                        </td>
-                                        <td
-                                            className='border p-2'
-                                            style={{
-                                                color: giveTakeAmount(friend) >= 0 ? 'green' : 'red',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            {giveTakeAmount(friend).toFixed(2)}
-                                        </td>
+
+                <h3 className='text-xl font-bold mb-4'>Friends List</h3>
+                <div className='w-full'>
+                    <div className='bg-white shadow-md rounded-lg p-6 mb-6  overflow-auto '>
+                        <div className={` ${classes.hidescroll} overflow-auto`}>
+                            <table className='border-collapse'>
+                                <thead>
+                                    <tr className='bg-gray-200'>
+                                        {friends.map((friend, index) => (
+                                            <th key={index} className='border p-2 text-center capitalize'>{friend.name}</th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        {friends.map((friend, index) => (
+                                            <td key={index} className='border p-2 min-w-[250px]'>
+                                                <ul>
+                                                    {friend.expenses.map((expense, i) => (
+                                                        <li key={i}>₹ {expense.amount.toFixed(2)} - {expense.type}</li>
+                                                    ))}
+                                                    {selectedFriendIndex === index && (
+                                                        <li className='flex items-center mt-2'>
+                                                            <input
+                                                                type="number"
+                                                                className='border border-gray-300 rounded p-1 mr-2'
+                                                                value={additionalExpense.amount}
+                                                                onChange={(e) => setAdditionalExpense({ ...additionalExpense, amount: e.target.value })}
+                                                                placeholder="Expense"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                className='border border-gray-300 rounded p-1 mr-2'
+                                                                value={additionalExpense.type}
+                                                                onChange={(e) => setAdditionalExpense({ ...additionalExpense, type: e.target.value })}
+                                                                placeholder="Type"
+                                                            />
+                                                            <button onClick={() => handleAddExpense(index)} className='px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600'>Save</button>
+                                                        </li>
+                                                    )}
+                                                </ul>
+                                                <div className='mt-2 font-semibold'>
+                                                    Spent: ₹ {calculateFriendTotalExpense(friend.expenses).toFixed(2)}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleExpenseInput(index)}
+                                                    className={`mt-2 px-2 py-1 ${selectedFriendIndex === index ? 'bg-red-500' : 'bg-yellow-500'} text-white rounded hover:bg-yellow-600`}
+                                                >
+                                                    {selectedFriendIndex === index ? 'Close' : 'Add More Expenses'}
+                                                </button>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                    <tr>
+                                        {friends.map((friend, index) => (
+                                            <td
+                                                key={index}
+                                                className='border p-2 text-center'
+                                                style={{
+                                                    color: giveTakeAmount(friend) >= 0 ? 'green' : 'red',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {giveTakeAmount(friend).toFixed(2)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+                </div>
 
-                    <div className='bg-white shadow-md rounded-lg p-6 mb-6'>
-                        <h3 className='text-xl font-bold mb-4'>Summary</h3>
-                        <p className='mb-2'>Total Amount: <span className='font-semibold'>${calculateTotalAmount().toFixed(2)}</span></p>
-                        <p className='mb-2'>Average Amount: <span className='font-semibold'>${calculateAverageAmount().toFixed(2)}</span></p>
-                    </div>
-                </div>
-                <div className='bg-white shadow-md rounded-lg p-6'>
-                    <h3 className='text-xl font-bold mb-4'>Payment Distribution</h3>
-                    <ul className='list-disc pl-6'>
-                        {calculateDistribution().map((line, index) => (
-                            <li key={index} className='mb-1'>{line}</li>
-                        ))}
-                    </ul>
-                </div>
+                {/* Distribute component */}
+                <Distribute calculateDistribution={calculateDistribution} />
             </div>
         </div>
     );
 };
 
-export default Practice
+export default Practice;
