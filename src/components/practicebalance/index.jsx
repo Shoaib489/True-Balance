@@ -122,130 +122,123 @@ const Practice = () => {
 
     return (
         <div className={`${classes.respoPadding} p-6 bg-gray-50 min-h-screen`}>
-            <div className=''>
+            <div>
                 <p className={classes.heading}>True Balance</p>
 
-                <div className='flex justify-between wrap gap-4'>
-                    <div className='bg-white shadow-md rounded-lg p-6 mb-6 w-[65%]'>
-                        <div className={`${classes.inputMain} flex gap-4 flex-wrap`}>
-                            <div className='flex flex-col'>
-                                <label className='font-semibold mb-1'>Name:</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    className='border border-gray-300 rounded p-1 '
-                                    value={currentFriend.name}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className='flex flex-col'>
-                                <label className='font-semibold mb-1'>Expense:</label>
-                                <input
-                                    type="number"
-                                    name="expense"
-                                    className='border border-gray-300 rounded p-1'
-                                    value={currentFriend.expense}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className='flex flex-col'>
-                                <label className='font-semibold mb-1'>For:</label>
-                                <input
-                                    type="text"
-                                    name="type"
-                                    className='border border-gray-300 rounded p-1'
-                                    value={currentFriend.type}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
+                {/* Add Friend Section */}
+                <div className='bg-white shadow-md rounded-lg p-6 mb-6'>
+                    <div className={`${classes.inputMain} flex gap-4 flex-wrap`}>
+                        <div className='flex flex-col'>
+                            <label className='font-semibold mb-1 capitalize'>Name:</label>
+                            <input 
+                                type="text"
+                                name="name"
+                                className='border border-gray-300 rounded p-1'
+                                value={currentFriend.name}
+                                onChange={handleInputChange}
+                            />
                         </div>
-                        <button onClick={handleAddFriend} className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'>Add Friend</button>
+                        <div className='flex flex-col'>
+                            <label className='font-semibold mb-1'>Expense:</label>
+                            <input
+                                type="number"
+                                name="expense"
+                                className='border border-gray-300 rounded p-1'
+                                value={currentFriend.expense}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className='flex flex-col'>
+                            <label className='font-semibold mb-1'>For:</label>
+                            <input
+                                type="text"
+                                name="type"
+                                className='border border-gray-300 rounded p-1'
+                                value={currentFriend.type}
+                                onChange={handleInputChange}
+                            />
+                        </div>
                     </div>
-
-                    {/* summary area */}
-
-                    <Summary
-                        totalAmount={calculateTotalAmount()}
-                        averageAmount={calculateAverageAmount()}
-                        handleClearAll={handleClearAll}
-                    />
-                    
-                    {/* summary area */}
+                    <button onClick={handleAddFriend} className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'>
+                        Add Friend
+                    </button>
                 </div>
 
+                {/* Summary Component below the Add Friend button */}
+                <Summary
+                    totalAmount={calculateTotalAmount()}
+                    averageAmount={calculateAverageAmount()}
+                    handleClearAll={handleClearAll}
+                />
+
+                {/* Friends List Section */}
                 <h3 className='text-xl font-bold mb-4'>Friends List</h3>
                 <div className='w-full'>
-                    <div className='bg-white shadow-md rounded-lg p-6 mb-6  overflow-auto '>
-                        <div className={` ${classes.hidescroll} overflow-auto`}>
-                            <table className='border-collapse'>
-                                <thead>
-                                    <tr className='bg-gray-200'>
-                                        {friends.map((friend, index) => (
-                                            <th key={index} className='border p-2 text-center capitalize'>{friend.name}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        {friends.map((friend, index) => (
-                                            <td key={index} className='border p-2 min-w-[250px]'>
-                                                <ul>
-                                                    {friend.expenses.map((expense, i) => (
-                                                        <li key={i}>₹ {expense.amount.toFixed(2)} - {expense.type}</li>
-                                                    ))}
-                                                    {selectedFriendIndex === index && (
-                                                        <li className='flex items-center mt-2'>
-                                                            <input
-                                                                type="number"
-                                                                className='border border-gray-300 rounded p-1 mr-2'
-                                                                value={additionalExpense.amount}
-                                                                onChange={(e) => setAdditionalExpense({ ...additionalExpense, amount: e.target.value })}
-                                                                placeholder="Expense"
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                className='border border-gray-300 rounded p-1 mr-2'
-                                                                value={additionalExpense.type}
-                                                                onChange={(e) => setAdditionalExpense({ ...additionalExpense, type: e.target.value })}
-                                                                placeholder="Type"
-                                                            />
-                                                            <button onClick={() => handleAddExpense(index)} className='px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600'>Save</button>
-                                                        </li>
-                                                    )}
-                                                </ul>
-                                                <div className='mt-2 font-semibold'>
-                                                    Spent: ₹ {calculateFriendTotalExpense(friend.expenses).toFixed(2)}
-                                                </div>
-                                                <button
-                                                    onClick={() => handleToggleExpenseInput(index)}
-                                                    className={`mt-2 px-2 py-1 ${selectedFriendIndex === index ? 'bg-red-500' : 'bg-yellow-500'} text-white rounded hover:bg-yellow-600`}
-                                                >
-                                                    {selectedFriendIndex === index ? 'Close' : 'Add More Expenses'}
-                                                </button>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr>
-                                        {friends.map((friend, index) => (
-                                            <td
-                                                key={index}
-                                                className='border p-2 text-center'
-                                                style={{
-                                                    color: giveTakeAmount(friend) >= 0 ? 'green' : 'red',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
-                                                {giveTakeAmount(friend).toFixed(2)}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                </tbody>
-                            </table>
+    <div className='bg-white shadow-md rounded-lg p-6 mb-6 overflow-auto'>
+        <div className={`${classes.hidescroll} overflow-auto`}>
+            <div className="space-y-4">
+                {friends.map((friend, index) => (
+                    <div key={index} className="border p-4 rounded-lg bg-gray-50">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="capitalize font-semibold text-[30px] ">{friend.name}</h3>
+                            <div className="font-semibold">
+                                Spent: ₹ {calculateFriendTotalExpense(friend.expenses).toFixed(2)}
+                            </div>
+                        </div>
+
+                        <ul className="mb-4">
+                            {friend.expenses.map((expense, i) => (
+                                <li key={i}>₹ {expense.amount.toFixed(2)} - {expense.type}</li>
+                            ))}
+                        </ul>
+
+                        {selectedFriendIndex === index && (
+                            <div className=' mt-2'>
+                                <input
+                                    type="number"
+                                    className='border border-gray-300 rounded p-1 mr-2'
+                                    value={additionalExpense.amount}
+                                    onChange={(e) => setAdditionalExpense({ ...additionalExpense, amount: e.target.value })}
+                                    placeholder="Expense"
+                                />
+                                <input
+                                    type="text"
+                                    className='border border-gray-300 rounded p-1 mr-2'
+                                    value={additionalExpense.type}
+                                    onChange={(e) => setAdditionalExpense({ ...additionalExpense, type: e.target.value })}
+                                    placeholder="Type"
+                                />
+                                <button onClick={() => handleAddExpense(index)} className='px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600'>
+                                    Save
+                                </button>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => handleToggleExpenseInput(index)}
+                            className={`mt-2 px-2 py-1 ${selectedFriendIndex === index ? 'bg-red-500' : 'bg-yellow-500'} text-white rounded hover:bg-yellow-600`}
+                        >
+                            {selectedFriendIndex === index ? 'Close' : 'Add More Expenses'}
+                        </button>
+
+                        <div
+                            className='mt-4 text-center font-semibold'
+                            style={{
+                                color: giveTakeAmount(friend) >= 0 ? 'green' : 'red',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            {giveTakeAmount(friend).toFixed(2)}
                         </div>
                     </div>
-                </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</div>
 
-                {/* Distribute component */}
+
+                {/* Distribute Component */}
                 <Distribute calculateDistribution={calculateDistribution} />
             </div>
         </div>
